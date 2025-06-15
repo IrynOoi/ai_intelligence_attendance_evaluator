@@ -1,0 +1,18 @@
+{
+  "Abir": {
+    "id": "1",
+    "absences": 4
+  },
+  "Fahim": {
+    "id": "2",
+    "absences": 6
+  },
+  "Hemel": {
+    "id": "3",
+    "absences": 0
+  },
+  "Nipa": {
+    "id": "4",
+    "absences": 8
+  }
+}

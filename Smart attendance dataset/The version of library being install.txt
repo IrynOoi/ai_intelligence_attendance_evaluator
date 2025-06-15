@@ -1,0 +1,5 @@
+The version of library being installed
+python 3.9.21
+tensorflow-2.10.0
+pillow-11.2.1
+numpy-1.26.4
