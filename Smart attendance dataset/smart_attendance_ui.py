@@ -653,57 +653,7 @@ class AttendancePage(tk.Frame):
             line = f"{record['time']}\t{record['id']}\t{record['name']}\t{record['status']}\n"
             self.attendance_display.insert(tk.END, line)
 
-    def show_absence_report(self):
-        report_window = tk.Toplevel(self)
-        report_window.title("Absence Frequency Report")
-        report_window.geometry("600x500")
-        report_window.configure(bg="#e6f2ff")
-        
-        report_frame = tk.Frame(report_window, bg="#e6f2ff", padx=20, pady=20)
-        report_frame.pack(fill="both", expand=True)
-        
-        tk.Label(report_frame, text="Absence Frequency Report", font=("Arial", 16, "bold"), 
-                bg="#e6f2ff", fg="#003366").pack(pady=10)
-        
-        columns = ("ID", "Name", "Absences", "Status")
-        tree = ttk.Treeview(report_frame, columns=columns, show="headings", height=15)
-        
-        tree.heading("ID", text="Student ID")
-        tree.heading("Name", text="Student Name")
-        tree.heading("Absences", text="Total Absences")
-        tree.heading("Status", text="Status")
-        
-        tree.column("ID", width=100, anchor="center")
-        tree.column("Name", width=200, anchor="center")
-        tree.column("Absences", width=100, anchor="center")
-        tree.column("Status", width=150, anchor="center")
-        
-        for student_name, student_info in student_database.items():
-            absences = student_info["absences"]
-            status = ""
-            
-            for rule in reversed(rules):
-                if absences >= rule["threshold"]:
-                    status = rule["consequence"]
-                    break
-            
-            tree.insert("", "end", values=(student_info["id"], student_name, absences, status))
-        
-        tree.pack(fill="both", expand=True, pady=10)
-        
-        scrollbar = ttk.Scrollbar(report_frame, orient="vertical", command=tree.yview)
-        scrollbar.pack(side="right", fill="y")
-        tree.configure(yscrollcommand=scrollbar.set)
-        
-        btn_close = tk.Button(
-            report_frame,
-            text="Close",
-            font=("Arial", 12),
-            bg="#003366",
-            fg="#ffffff",
-            command=report_window.destroy
-        )
-        btn_close.pack(pady=10)
+   
 
 
 
