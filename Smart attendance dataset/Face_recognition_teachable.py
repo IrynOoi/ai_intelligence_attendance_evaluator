@@ -43,7 +43,7 @@ with open("labels.txt", "r") as f:
     class_names = [line.strip() for line in f.readlines()]
 
 # === Load captured image ===
-image_path = "29.jpg"
+image_path = "Hemel31.jpg"
 if not os.path.exists(image_path):
     raise FileNotFoundError(f"Error: '{image_path}' not found.")
 image = Image.open(image_path).convert("RGB")

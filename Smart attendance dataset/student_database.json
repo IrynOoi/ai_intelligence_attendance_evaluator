@@ -1,18 +1,37 @@
 {
   "Abir": {
     "id": "1",
-    "absences": 4
+    "absences": 4,
+    "presences": 9
   },
   "Fahim": {
     "id": "2",
-    "absences": 7
+    "absences": 7,
+    "presences": 4
   },
   "Hemel": {
     "id": "3",
-    "absences": 1
+    "absences": 1,
+    "presences": 5
   },
   "Nipa": {
     "id": "4",
-    "absences": 8
+    "absences": 8,
+    "presences": 3
+  },
+  "iryn": {
+    "id": "5",
+    "absences": 0,
+    "presences": 0
+  },
+  "halon": {
+    "id": "6",
+    "absences": 0,
+    "presences": 0
+  },
+  "boon": {
+    "id": "7",
+    "absences": 0,
+    "presences": 0
   }
 }

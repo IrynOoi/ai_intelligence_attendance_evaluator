@@ -11,21 +11,25 @@ import os.path
 
 # Load class labels
 with open("labels.txt", "r") as f:
-    class_names = [line.strip().split(' ', 1)[-1].strip() for line in f]   # 1. Remove leading/trailing whitespace from each line
-                                                                            # 2. Split the line at the first space; take the part after the space (e.g., skip label number)
+    class_names = [line.strip().split(' ', 1)[-1].strip() for line in f]
 
-# Database functions
+# Database functions - MODIFIED TO INCLUDE PRESENCE COUNT
 def load_student_database():
     if os.path.exists("student_database.json"):
         try:
             with open("student_database.json", "r") as f:
-                return json.load(f)
+                db = json.load(f)
+                # Add presences field if missing (backward compatibility)
+                for student in db.values():
+                    if "presences" not in student:
+                        student["presences"] = 0
+                return db
         except Exception as e:
             print("❌ Error loading student_database.json:", str(e))
-            return None  # Or raise an error instead
+            return {}
     else:
         print("❌ student_database.json not found.")
-        return None  # Or raise FileNotFoundError
+        return {}
 
 def save_student_database(db):
     with open("student_database.json", "w") as f:
@@ -129,8 +133,6 @@ class AttendancePage(tk.Frame):
         button_frame = tk.Frame(self, bg="#e6f2ff")
         button_frame.pack(pady=10)
         
-
-
     def setup_face_recognition_tab(self):
         tab = self.face_recognition_tab
         tab.configure(style="TFrame")
@@ -203,39 +205,46 @@ class AttendancePage(tk.Frame):
         tab = self.manual_entry_tab
         form_frame = tk.Frame(tab)
         form_frame.pack(pady=20)
-        
+
         # Student selection
         tk.Label(form_frame, text="Select Student:", font=("Arial", 14), fg="#003366").grid(row=0, column=0, padx=10, pady=5, sticky="w")
         self.student_var = tk.StringVar()
-        
-        # Create combobox first
+
         self.combo_student = ttk.Combobox(form_frame, textvariable=self.student_var, font=("Arial", 14), width=30)
         self.combo_student.grid(row=0, column=1, padx=10, pady=5)
-        
-        # Then update its values
+
         self.update_manual_entry_combobox()
         self.combo_student.bind("<<ComboboxSelected>>", self.on_student_select)
-        
+
         # Student ID
         tk.Label(form_frame, text="Student ID:", font=("Arial", 14), fg="#003366").grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.entry_id = tk.Entry(form_frame, font=("Arial", 14), width=32, state="normal", bg="#ffffff")
         self.entry_id.grid(row=1, column=1, padx=10, pady=5)
+
+        # Attendance counters frame
+        counters_frame = tk.Frame(form_frame)
+        counters_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky="w")
         
-        # Absence count display
-        tk.Label(form_frame, text="Total Absences:", font=("Arial", 14), fg="#003366").grid(row=2, column=0, padx=10, pady=5, sticky="w")
-        self.absence_count = tk.Label(form_frame, text="0", font=("Arial", 14),  fg="#003366")
-        self.absence_count.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        # Absence count display - MODIFIED: Added presence counter
+        tk.Label(counters_frame, text="Absences:", font=("Arial", 14), fg="#003366").grid(row=0, column=0, padx=(0, 5))
+        self.absence_count = tk.Label(counters_frame, text="0", font=("Arial", 14), fg="#f44336")
+        self.absence_count.grid(row=0, column=1, padx=(0, 20))
         
+        # Presence count display - ADDED
+        tk.Label(counters_frame, text="Presences:", font=("Arial", 14), fg="#003366").grid(row=0, column=2, padx=(0, 5))
+        self.presence_count = tk.Label(counters_frame, text="0", font=("Arial", 14), fg="#4CAF50")
+        self.presence_count.grid(row=0, column=3)
+
         # Status
         tk.Label(form_frame, text="Status:", font=("Arial", 14), fg="#003366").grid(row=3, column=0, padx=10, pady=5, sticky="w")
         self.combo_status = ttk.Combobox(form_frame, font=("Arial", 14), width=28)
         self.combo_status["values"] = ("Present", "Absent")
         self.combo_status.grid(row=3, column=1, padx=10, pady=5)
-        
+
         # Manual entry button
         btn_frame = tk.Frame(tab)
         btn_frame.pack(pady=10)
-        
+
         btn_mark = tk.Button(
             btn_frame,
             text="Mark Attendance",
@@ -246,6 +255,51 @@ class AttendancePage(tk.Frame):
             width=20
         )
         btn_mark.pack()
+
+
+    def mark_attendance(self, status):
+        if not hasattr(self, 'detected_name'):
+            messagebox.showerror("Error", "No image processed yet")
+            return
+
+        if self.detected_name == "Unknown":
+            messagebox.showerror("Error", "Unknown person detected. Use Manage Student detail.")
+            return
+
+        for record in attendance_records:
+            if record["name"] == self.detected_name:
+                messagebox.showerror("Error", f"Attendance for {self.detected_name} has already been marked.")
+                return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        record = {
+            "name": self.detected_name,
+            "id": self.detected_id,
+            "status": status,
+            "time": timestamp
+        }
+        attendance_records.append(record)
+
+        if self.detected_name in student_database:
+            # MODIFIED: Update both absences and presences
+            if status == "Absent":
+                student_database[self.detected_name]["absences"] += 1
+            elif status == "Present":
+                student_database[self.detected_name]["presences"] += 1
+                
+            save_student_database(student_database)
+        else:
+            messagebox.showerror("Error", f"{self.detected_name} not found in the database.")
+            return
+
+        explanation = self.infer_consequence(self.detected_name)
+        self.update_display()
+
+        message = f"Attendance marked for {self.detected_name} as {status}."
+        if explanation:
+            message += f"\n\n{explanation}"
+        messagebox.showinfo("Success", message)
+
 
     def setup_manage_db_tab(self):
         tab = self.manage_db_tab
@@ -276,6 +330,12 @@ class AttendancePage(tk.Frame):
         entry_absences = tk.Entry(form_frame, textvariable=self.new_absences_var, font=("Arial", 12), width=30)
         entry_absences.grid(row=3, column=1, padx=5, pady=5)
         
+        # Initial presences - ADDED
+        tk.Label(form_frame, text="Initial Presences:", font=("Arial", 12), fg="#003366").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        self.new_presences_var = tk.StringVar(value="0")
+        entry_presences = tk.Entry(form_frame, textvariable=self.new_presences_var, font=("Arial", 12), width=30)
+        entry_presences.grid(row=4, column=1, padx=5, pady=5)
+        
         # Add button
         btn_add = tk.Button(
             form_frame,
@@ -286,25 +346,27 @@ class AttendancePage(tk.Frame):
             command=self.add_new_student,
             width=15
         )
-        btn_add.grid(row=4, column=1, padx=5, pady=15, sticky="w")
+        btn_add.grid(row=5, column=1, padx=5, pady=15, sticky="w")
         
         # Database display
         db_display_frame = tk.Frame(tab)
         db_display_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Treeview to display student database
-        columns = ("Name", "ID", "Absences")
+        # Treeview to display student database - MODIFIED: Added Presences column
+        columns = ("Name", "ID", "Absences", "Presences")
         self.db_tree = ttk.Treeview(db_display_frame, columns=columns, show="headings")
         
         # Define headings
         self.db_tree.heading("Name", text="Student Name")
         self.db_tree.heading("ID", text="Student ID")
         self.db_tree.heading("Absences", text="Absences")
+        self.db_tree.heading("Presences", text="Presences")
         
         # Set column widths
         self.db_tree.column("Name", width=200, anchor="center")
         self.db_tree.column("ID", width=150, anchor="center")
-        self.db_tree.column("Absences", width=100, anchor="center")
+        self.db_tree.column("Absences", width=80, anchor="center")
+        self.db_tree.column("Presences", width=80, anchor="center")
         
         # Add scrollbar
         scrollbar = ttk.Scrollbar(db_display_frame, orient="vertical", command=self.db_tree.yview)
@@ -336,14 +398,20 @@ class AttendancePage(tk.Frame):
         for item in self.db_tree.get_children():
             self.db_tree.delete(item)
         
-        # Add students from database
+        # Add students from database - MODIFIED: Added presences
         for name, info in student_database.items():
-            self.db_tree.insert("", "end", values=(name, info["id"], info["absences"]))
+            self.db_tree.insert("", "end", values=(
+                name, 
+                info["id"], 
+                info["absences"],
+                info.get("presences", 0)  # Use get for backward compatibility
+            ))
 
     def add_new_student(self):
         name = self.new_name_var.get().strip()
         student_id = self.new_id_var.get().strip()
         absences = self.new_absences_var.get().strip()
+        presences = self.new_presences_var.get().strip()
         
         # Validate input
         if not name:
@@ -354,6 +422,9 @@ class AttendancePage(tk.Frame):
             return
         if not absences.isdigit():
             messagebox.showerror("Error", "Absences must be a number")
+            return
+        if not presences.isdigit():
+            messagebox.showerror("Error", "Presences must be a number")
             return
             
         # Check if name or ID already exists
@@ -366,10 +437,11 @@ class AttendancePage(tk.Frame):
                 messagebox.showerror("Error", "Student ID already exists in database")
                 return
         
-        # Add to database
+        # Add to database - MODIFIED: Added presences
         student_database[name] = {
             "id": student_id,
-            "absences": int(absences)
+            "absences": int(absences),
+            "presences": int(presences)
         }
         
         # Save to file
@@ -383,6 +455,7 @@ class AttendancePage(tk.Frame):
         self.new_name_var.set("")
         self.new_id_var.set("")
         self.new_absences_var.set("0")
+        self.new_presences_var.set("0")  # ADDED
         
         messagebox.showinfo("Success", f"Added new student: {name}")
 
@@ -419,6 +492,7 @@ class AttendancePage(tk.Frame):
         student_info = student_database.get(student_name, {})
         student_id = student_info.get("id", "")
         absences = student_info.get("absences", 0)
+        presences = student_info.get("presences", 0)  # ADDED
         
         self.entry_id.config(state="normal")
         self.entry_id.delete(0, tk.END)
@@ -426,6 +500,7 @@ class AttendancePage(tk.Frame):
         self.entry_id.config(state="readonly")
         
         self.absence_count.config(text=str(absences))
+        self.presence_count.config(text=str(presences))  # ADDED
         self.combo_status.set("Present")  # Default to Present
 
     def capture_image(self):
@@ -530,10 +605,12 @@ class AttendancePage(tk.Frame):
             self.detected_name = detected_label
             self.detected_id = student_database.get(detected_label, {}).get("id", "")
             absences = student_database.get(detected_label, {}).get("absences", 0)
+            presences = student_database.get(detected_label, {}).get("presences", 0)  # ADDED
+            
             result_text = (
                 f"Detected: {self.detected_name}\n"
                 f"ID: {self.detected_id if self.detected_id else 'N/A'}\n"
-                f"Absences: {absences}\n"
+                f"Absences: {absences} | Presences: {presences}\n"  # MODIFIED
                 f"Confidence Score: {confidence:.2%}")
         else:
             self.detected_name = "Unknown"
@@ -545,54 +622,6 @@ class AttendancePage(tk.Frame):
             
         self.result_label.config(text=result_text)
         self.notebook.select(0)  # Switch to face recognition tab
-
-    def mark_attendance(self, status):
-        if not hasattr(self, 'detected_name'):
-            messagebox.showerror("Error", "No image processed yet")
-            return
-
-        if self.detected_name == "Unknown":
-            messagebox.showerror("Error", "Unknown person detected. Use Manage Student detail.")
-            return
-
-        # Check if attendance already marked for this person in the current session
-        for record in attendance_records:
-            if record["name"] == self.detected_name:
-                messagebox.showerror("Error", f"Attendance for {self.detected_name} has already been marked.")
-                return
-
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        record = {
-            "name": self.detected_name,
-            "id": self.detected_id,
-            "status": status,
-            "time": timestamp
-        }
-        attendance_records.append(record)
-
-        # === Update the database based on attendance status ===
-        if self.detected_name in student_database:
-            if status == "Absent":
-                student_database[self.detected_name]["absences"] += 1
-            elif status == "Present":
-                # Optional: Reset absences or do nothing
-                pass
-            save_student_database(student_database)
-        else:
-            # Fallback if somehow student not found in DB
-            messagebox.showerror("Error", f"{self.detected_name} not found in the database.")
-            return
-
-        # Show consequences (e.g., warnings for too many absences)
-        explanation = self.infer_consequence(self.detected_name)
-        self.update_display()
-
-        message = f"Attendance marked for {self.detected_name} as {status}."
-        if explanation:
-            message += f"\n\n{explanation}"
-        messagebox.showinfo("Success", message)
-
-
 
     def mark_manual_attendance(self):
         name = self.student_var.get()
@@ -614,13 +643,21 @@ class AttendancePage(tk.Frame):
         record = {"name": name, "id": student_id, "status": status, "time": timestamp}
         attendance_records.append(record)
 
-        # Update absence count in database and save
-        if status == "Absent":
-            if name in student_database:
+        # Update attendance counts in database and UI - MODIFIED
+        if name in student_database:
+            if status == "Absent":
                 student_database[name]["absences"] += 1
                 save_student_database(student_database)
                 self.absence_count.config(text=str(student_database[name]["absences"]))
-
+            elif status == "Present":
+                student_database[name]["presences"] += 1
+                save_student_database(student_database)
+                self.presence_count.config(text=str(student_database[name]["presences"]))
+                
+            # Update both counters to ensure UI consistency
+            self.absence_count.config(text=str(student_database[name]["absences"]))
+            self.presence_count.config(text=str(student_database[name]["presences"]))
+        
         explanation = self.infer_consequence(name)
         self.update_display()
 
@@ -643,18 +680,15 @@ class AttendancePage(tk.Frame):
                 break
 
         return explanation
-
+        
     def update_display(self):
         self.attendance_display.delete("1.0", tk.END)
-        header = "Time\t\tID\tName\t\tStatus\n" + "-"*60 + "\n"
+        header = "Time\t\t\tID\tName\t\tStatus\n" + "-"*216 + "\n"
         self.attendance_display.insert(tk.END, header)
         
         for record in attendance_records:
-            line = f"{record['time']}\t{record['id']}\t{record['name']}\t{record['status']}\n"
+            line = f"{record['time']}\t\t\t{record['id']}\t{record['name']}\t\t{record['status']}\n"
             self.attendance_display.insert(tk.END, line)
-
-   
-
 
 
 # Run the application
