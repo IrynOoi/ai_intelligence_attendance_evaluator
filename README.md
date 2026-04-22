@@ -14,3 +14,6 @@ The Intelligent Attendance Evaluation System (IAES) is an advanced AI-powered so
 <img width="1313" height="907" alt="ai_attendance4" src="https://github.com/user-attachments/assets/f615768e-411a-4808-a8cc-1a885fd04851" />
 
 
+## 🎥 Presentation Video
+
+[![Watch the video](https://img.youtube.com/vi/cDHOgv72i_k/0.jpg)](https://youtu.be/cDHOgv72i_k)
