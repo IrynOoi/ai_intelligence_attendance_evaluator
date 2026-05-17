@@ -50,9 +50,7 @@ The system integrates **computer vision, machine learning, and rule-based logic*
 
 ---
 
-## 🧠 System Architecture
 
-### 📁 Project Structure
 
 <img width="875" height="493" alt="image" src="https://github.com/user-attachments/assets/c89f0668-6f7c-43f0-a940-597660b0a61e" />
 
