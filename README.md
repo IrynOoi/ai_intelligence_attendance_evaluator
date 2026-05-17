@@ -1,6 +1,6 @@
-## Intelligent Attendance Evaluation System(Mini Project for AI)
+# Intelligent Attendance Evaluation System(Mini Project for AI)
 
-# 🤖 AI-Based Smart Attendance System
+## 🤖 AI-Based Smart Attendance System
 
 ## 📌 Overview
 The **AI-Based Smart Attendance System** is a Python desktop application that automates student attendance using face recognition. It replaces traditional manual tracking methods, reducing errors, preventing misuse, and improving administrative efficiency.
