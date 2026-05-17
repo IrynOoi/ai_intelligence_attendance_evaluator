@@ -1,6 +1,58 @@
 ## Intelligent Attendance Evaluation System(Mini Project for AI)
 
-The Intelligent Attendance Evaluation System (IAES) is an advanced AI-powered solution designed to replace traditional attendance methods with a more accurate, efficient, and scalable approach. By leveraging facial recognition technology, the system automates attendance tracking, ensuring instant and precise record-keeping while preventing fraudulent activities through biometric verification. IAES significantly reduces administrative workload and minimizes manual errors, allowing institutions to manage attendance effortlessly. Furthermore, the system supports scalability by enabling easy addition of new students and integrates seamlessly with existing platforms, offering smooth data export for analysis and reporting.
+# 🤖 AI-Based Smart Attendance System
+
+## 📌 Overview
+The **AI-Based Smart Attendance System** is a Python desktop application that automates student attendance using face recognition. It replaces traditional manual tracking methods, reducing errors, preventing misuse, and improving administrative efficiency.
+
+The system integrates **computer vision, machine learning, and rule-based logic** to provide an intelligent attendance solution.
+
+---
+
+## 🎯 Objectives
+- Automate attendance using face recognition
+- Track student presence and absence records
+- Enforce attendance policies using rule-based logic
+- Provide an admin interface for student management
+- Build an easy-to-use and extendable system
+
+---
+
+## ⚙️ Features
+
+### 🧠 Face Recognition
+- Identifies students using trained model (`keras_model.h5`)
+- Uses OpenCV, PIL, and TensorFlow/Keras
+- Prevents duplicate attendance marking in the same session
+
+### 📝 Attendance Tracking
+- Marks students as present/absent
+- Tracks total presences and absences
+- Stores data in `student_database.json`
+
+### ⚖️ Rule-Based System
+- Applies consequences based on absence thresholds:
+  - 3 absences → Warning
+  - 5 absences → Meeting required
+  - 7 absences → Disciplinary action
+
+### 👨‍💻 Admin Management
+- Add new students
+- Delete existing students
+- Automatically syncs UI with database
+
+### 🖥️ User Interface
+- Built with Tkinter
+- Tabs include:
+  - Face Recognition
+  - Manual Entry
+  - Student Management
+
+---
+
+## 🧠 System Architecture
+
+### 📁 Project Structure
 
 <img width="875" height="493" alt="image" src="https://github.com/user-attachments/assets/c89f0668-6f7c-43f0-a940-597660b0a61e" />
 
